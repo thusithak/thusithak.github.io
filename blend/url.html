@@ -41,71 +41,114 @@
     </div>
 
     <script>
-        const words = [
+        /**
+ * URL Hash & Favicon Animator for Webflow
+ * Copy and paste this entire script into your Webflow Project Settings > Custom Code > Footer Code
+ * or inside an Embed element on the page.
+ */
+
+(function() {
+    // --- CONFIGURATION ---
+    const config = {
+        // 1. URL WORDS: Add your custom words here
+        words: [
             "loading", "processing", "connecting", "downloading", 
             "encrypting", "decrypting", "waiting", "initializing",
             "searching", "calculating", "rendering", "compiling",
             "system", "error", "warning", "success", "done",
             "hacker", "matrix", "cyber", "phantom", "ghost"
-        ];
+        ],
 
-        let intervalId = null;
-        const speed = 200; // Speed in milliseconds
+        // 2. FAVICONS: Add your image URLs here (png, ico, jpg).
+        // I've used SVG Data URIs (Emojis) here so it works instantly without external files.
+        favicons: [
+            "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕐</text></svg>",
+            "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕒</text></svg>",
+            "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕔</text></svg>",
+            "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕖</text></svg>",
+            "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕘</text></svg>",
+            "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕚</text></svg>"
+        ],
 
-        function getRandomWord() {
-            return words[Math.floor(Math.random() * words.length)];
+        speed: 200,       // Speed in milliseconds
+        autoStart: true   // Set to false if you want to trigger it manually
+    };
+
+    // --- LOGIC (Do not edit below unless you know JS) ---
+    let intervalId = null;
+    let originalFavicon = "";
+
+    // Helper: Find the existing favicon link element
+    function getFaviconElement() {
+        return document.querySelector("link[rel*='icon']") || createFaviconElement();
+    }
+
+    function createFaviconElement() {
+        const link = document.createElement('link');
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        document.head.appendChild(link);
+        return link;
+    }
+
+    // Save original favicon to restore on stop
+    const faviconLink = getFaviconElement();
+    originalFavicon = faviconLink.href;
+
+    function getRandomItem(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
+
+    function startAnimation() {
+        if (intervalId) return; // Already running
+
+        // Run immediately
+        updateState();
+
+        // Start loop
+        intervalId = setInterval(updateState, config.speed);
+    }
+
+    function updateState() {
+        // 1. Update URL Hash
+        if (config.words.length > 0) {
+            const randomWord = getRandomItem(config.words);
+            history.replaceState(null, null, '#' + randomWord);
         }
 
-        function startAnimation() {
-            if (intervalId) return; // Prevent multiple intervals
-
-            const startBtn = document.getElementById('startBtn');
-            const stopBtn = document.getElementById('stopBtn');
-            const status = document.getElementById('status');
-
-            startBtn.disabled = true;
-            startBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            stopBtn.disabled = false;
-            stopBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            status.textContent = "Status: Running...";
-            status.classList.add('text-emerald-400');
-            status.classList.remove('text-slate-500');
-
-            intervalId = setInterval(() => {
-                const randomWord = getRandomWord();
-                
-                // We use replaceState instead of window.location.hash = ...
-                // This prevents the browser history from breaking (the "Back" button will still work).
-                history.replaceState(null, null, '#' + randomWord);
-                
-                // Optional: Update document title to match
-                document.title = `Status: ${randomWord}`;
-            }, speed);
+        // 2. Update Favicon
+        if (config.favicons.length > 0) {
+            const randomIcon = getRandomItem(config.favicons);
+            const link = getFaviconElement();
+            link.href = randomIcon;
         }
+    }
 
-        function stopAnimation() {
-            if (!intervalId) return;
+    function stopAnimation() {
+        if (!intervalId) return;
+        clearInterval(intervalId);
+        intervalId = null;
+        
+        // Clean up URL
+        history.replaceState(null, null, ' '); 
 
-            clearInterval(intervalId);
-            intervalId = null;
+        // Restore original favicon
+        const link = getFaviconElement();
+        link.href = originalFavicon;
+    }
 
-            // Reset UI
-            const startBtn = document.getElementById('startBtn');
-            const stopBtn = document.getElementById('stopBtn');
-            const status = document.getElementById('status');
+    // Expose functions globally
+    window.UrlAnimator = {
+        start: startAnimation,
+        stop: stopAnimation
+    };
 
-            startBtn.disabled = false;
-            startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            stopBtn.disabled = true;
-            stopBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            status.textContent = "Status: Stopped";
-            status.classList.remove('text-emerald-400');
-            status.classList.add('text-slate-500');
+    // Start automatically if configured
+    if (config.autoStart) {
+        startAnimation();
+    }
 
-            // Clean up the URL
-            history.replaceState(null, null, ' '); // Removes the hash
-            document.title = "URL Hash Animator";
-        }
+})();
     </script>
 </body>
 </html>
